@@ -31,12 +31,13 @@ internal class LocalStorage {
     // MARK: - API
 
     internal var needsRefresh = false
+
     internal var deviceToken: String? = nil
 
     internal init(notificationHubPath path: String) {
         self.deviceTokenKey = "\(path)-deviceToken"
-        self.versionKey = "\(path)-deviceToken"
-        self.registrationsKey = "registrations"
+        self.versionKey = "\(path)-version"
+        self.registrationsKey = "\(path)-registrations"
 
         loadFromUserDefaults()
     }

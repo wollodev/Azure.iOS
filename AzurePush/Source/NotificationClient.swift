@@ -76,30 +76,16 @@ internal class NotificationClient {
 
     // MARK: - Unregistration
 
-    internal func unregisterForRemoteNotifications(completion: @escaping (Response<Data>) -> Void) {
+    internal func cancel(registration: Registration, completion: @escaping (Response<Data>) -> Void) {
         guard isConfigured else {
             completion(Response(AzurePush.Error.notConfigured))
             return
         }
 
-        delete(registrationWithName: Registration.defaultName, completion: completion)
+        delete(registration: registration, completion: completion)
     }
 
-    internal func unregisterForRemoteNotifications(forRegistrationWithTemplateNamed templateName: String, completion: @escaping (Response<Data>) -> Void) {
-        guard isConfigured else {
-            completion(Response(AzurePush.Error.notConfigured))
-            return
-        }
-
-        if let error = Registration.Template.validate(name: templateName) {
-            completion(Response(error))
-            return
-        }
-
-        delete(registrationWithName: templateName, completion: completion)
-    }
-
-    internal func unregisterForRemoteNotifications(forDeviceToken deviceToken: Data, completion: @escaping (Response<Data>) -> Void) {
+    internal func cancelAllRegistrations(forDeviceToken deviceToken: Data, completion: @escaping (Response<Data>) -> Void) {
         guard isConfigured else {
             completion(Response(AzurePush.Error.notConfigured))
             return
@@ -118,7 +104,7 @@ internal class NotificationClient {
             for registration in response.result.resource! {
                 dispatchGroup.enter()
 
-                self?.delete(registrationWithName: registration.name) { r in
+                self?.delete(registration: registration) { r in
                     if r.result.isFailure {
                         completion(r)
                         return
@@ -138,7 +124,7 @@ internal class NotificationClient {
 
     private func registerForRemoteNotifications(withDeviceToken token: String, name: String, andPayload payload: String, completion: @escaping (Response<Registration>) -> Void) {
         guard localStorage.needsRefresh else {
-            createOrUpdate(registrationWithName: name, payload: payload, deviceToken: token, completion: completion)
+            createOrUpdate(registrationWithName: name, payload: payload, completion: completion)
             return
         }
 
@@ -149,20 +135,20 @@ internal class NotificationClient {
                 completion(Response(error))
             case .success(_):
                 self?.localStorage.refresh(withDeviceToken: refreshedDeviceToken)
-                self?.createOrUpdate(registrationWithName: name, payload: payload, deviceToken: token, completion: completion)
+                self?.createOrUpdate(registrationWithName: name, payload: payload, completion: completion)
             }
         }
     }
     
-    private func createOrUpdate(registrationWithName name: String, payload: String, deviceToken: String, completion: @escaping (Response<Registration>) -> Void) {
+    private func createOrUpdate(registrationWithName name: String, payload: String, completion: @escaping (Response<Registration>) -> Void) {
         guard let registration = localStorage[name] else {
-            createAndUpsert(registrationWithName: name, payload: payload, deviceToken: deviceToken, completion: completion)
+            createAndUpsert(registrationWithName: name, payload: payload, completion: completion)
             return
         }
 
-        upsert(registrationWithId: registration.id, name: name, payload: payload, deviceToken: deviceToken) { [weak self] response in
+        upsert(registrationWithId: registration.id, name: name, payload: payload) { [weak self] response in
             if response.response?.statusCode == HttpStatusCode.gone.rawValue {
-                self?.createAndUpsert(registrationWithName: name, payload: payload, deviceToken: deviceToken, completion: completion)
+                self?.createAndUpsert(registrationWithName: name, payload: payload, completion: completion)
                 return
             }
 
@@ -170,7 +156,7 @@ internal class NotificationClient {
         }
     }
 
-    private func createAndUpsert(registrationWithName name: String, payload: String, deviceToken: String, completion: @escaping (Response<Registration>) -> Void) {
+    private func createAndUpsert(registrationWithName name: String, payload: String, completion: @escaping (Response<Registration>) -> Void) {
         let url = URL(string: "\(endpoint.absoluteString)\(path)/registrationids/?api-version=\(NotificationClient.apiVersion)")!
 
         sendRequest(url: url, method: .post, payload: payload) { [weak self] response in
@@ -179,11 +165,11 @@ internal class NotificationClient {
                 return
             }
 
-            self?.upsert(registrationWithId: locationUrl.registrationId, name: name, payload: payload, deviceToken: deviceToken, completion: completion)
+            self?.upsert(registrationWithId: locationUrl.registrationId, name: name, payload: payload, completion: completion)
         }
     }
 
-    private func upsert(registrationWithId id: String, name: String, payload: String, deviceToken: String, completion: @escaping (Response<Registration>) -> Void) {
+    private func upsert(registrationWithId id: String, name: String, payload: String, completion: @escaping (Response<Registration>) -> Void) {
         let url = URL(string: "\(endpoint.absoluteString)\(path)/Registrations/\(id)?api-version=\(NotificationClient.apiVersion)")!
 
         sendRequest(url: url, method: .put, payload: payload) { [weak self] response in
@@ -215,17 +201,12 @@ internal class NotificationClient {
         }
     }
 
-    private func delete(registrationWithName name: String, completion: @escaping (Response<Data>) -> Void) {
-        guard let registration = localStorage[name] else {
-            completion(Response("".data(using: .utf8)!))
-            return
-        }
-
+    private func delete(registration: Registration, completion: @escaping (Response<Data>) -> Void) {
         let url = URL(string: "\(endpoint.absoluteString)\(path)/Registrations/\(registration.id)?api-version=\(NotificationClient.apiVersion)")!
 
         sendRequest(url: url, method: .delete, etag: "*") { [weak self] response in
             if response.result.isSuccess {
-                self?.localStorage.removeRegistration(withName: name)
+                self?.localStorage.removeRegistration(withName: registration.name)
             }
 
             completion(response)

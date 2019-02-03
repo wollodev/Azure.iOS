@@ -10,7 +10,7 @@
 
 import Foundation
 
-internal struct ConnectionParams {
+public struct ConnectionParams {
     private enum Keys: String {
         case endpoint = "Endpoint"
         case sharedAccessKeyName = "SharedAccessKeyName"
@@ -27,8 +27,9 @@ internal struct ConnectionParams {
 
     init(connectionString string: String) throws {
         let components = string.components(separatedBy: ";")
-        let keyValuePairs = components.map { $0.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: true) }
-                                      .map { (Keys(rawValue: String($0[0])), String($0[1])) }
+        let keyValuePairs = components
+            .map { $0.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: true) }
+            .map { (Keys(rawValue: String($0[0])), String($0[1])) }
 
         for (key, value) in keyValuePairs {
             guard let key = key else { continue }
@@ -48,7 +49,7 @@ internal struct ConnectionParams {
             throw AzurePush.Error.invalidConnectionString("the endpoint is missing or is in an invalid format in the connection string")
         }
 
-        if sharedAccessKeyName == nil && sharedAccessKey == nil {
+        if sharedAccessKeyName == nil || sharedAccessKey == nil {
             throw AzurePush.Error.invalidConnectionString("the security information is missing in the connection string")
         }
     }

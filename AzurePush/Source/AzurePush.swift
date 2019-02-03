@@ -61,24 +61,18 @@ public class AzurePush {
         NotificationClient.shared.registerForRemoteNotifications(withDeviceToken: deviceToken, usingTemplate: template, priority: priority, tags: tags, completion: completion)
     }
 
-    // MARK: - Unregistration
+    // MARK: - Cancellation
 
-    /// Unregisters this device from the Azure Notification Hub. Any native push notification sent
-    /// by the notification hub will no longer be received by this device.
-    public static func unregisterForRemoteNotifications(completion: @escaping (Response<Data>) -> Void) {
-        NotificationClient.shared.unregisterForRemoteNotifications(completion: completion)
+    /// Cancels the registration. Any push notification sent by the notification hub,
+    /// matching this registration, will no longer be received by this device.
+    public static func cancel(registration: Registration, completion: @escaping (Response<Data>) -> Void) {
+        NotificationClient.shared.cancel(registration: registration, completion: completion)
     }
 
-    /// Unregisters this device from the Azure Notification Hub. Any push notification sent by the notification hub
-    /// matching the template corresponding to the template name provided will no longer be received by this device.
-    public static func unregisterForRemoteNotifications(forRegistrationWithTemplateNamed templateName: String, completion: @escaping (Response<Data>) -> Void) {
-        NotificationClient.shared.unregisterForRemoteNotifications(forRegistrationWithTemplateNamed: templateName, completion: completion)
-    }
-
-    /// Unregisters this device from the Azure Notification Hub. All native push notifications and push notifications
-    /// matching any template provided by this device will no longer be received by this device.
-    public static func unregisterForRemoteNotifications(forDeviceToken deviceToken: Data, completion: @escaping (Response<Data>) -> Void) {
-        NotificationClient.shared.unregisterForRemoteNotifications(forDeviceToken: deviceToken, completion: completion)
+    /// Cancels all the registrations made with the specified device token. The device will no longer receive
+    /// push notifications sent through the Azure Notification Hub.
+    public static func cancelAllRegistrations(forDeviceToken deviceToken: Data, completion: @escaping (Response<Data>) -> Void) {
+        NotificationClient.shared.cancelAllRegistrations(forDeviceToken: deviceToken, completion: completion)
     }
 }
 

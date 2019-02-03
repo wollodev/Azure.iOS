@@ -11,7 +11,7 @@
 import Foundation
 
 /// A `Registration` associates a specific device with a set of tags and possibly a template.
-/// The device will receive all push notifications targetting any or all of the tags associated and
+/// The device will receive all push notifications targeting any or all of the tags associated and
 /// if a template is provided, the push notifications contents will be in the format specified by
 /// the template.
 public struct Registration: Codable {

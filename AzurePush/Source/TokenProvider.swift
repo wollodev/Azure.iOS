@@ -11,7 +11,7 @@
 import Foundation
 import AzureCore
 
-internal class TokenProvider {
+public class TokenProvider {
     private static let defaultTokenTimeToLive: TimeInterval = 1200
 
     // MARK: -
@@ -34,7 +34,7 @@ internal class TokenProvider {
 
     // MARK: -
 
-    internal init(connectionParams params: ConnectionParams) {
+    public init(connectionParams params: ConnectionParams) {
         self.connectionParams = params
     }
 
@@ -43,7 +43,7 @@ internal class TokenProvider {
             return token.value
         }
 
-        let expiresOn = Int(Date().addingTimeInterval(TokenProvider.defaultTokenTimeToLive).timeIntervalSince1970 * 60)
+        let expiresOn = Int(Date().addingTimeInterval(TokenProvider.defaultTokenTimeToLive).timeIntervalSince1970)
         let audienceUri = url.absoluteString.replacingOccurrences(of: "https", with: "http").addingPercentEncodingWithAzureAllowedCharacters()?.lowercased()
         let signature = audienceUri.flatMap { CryptoProvider.hmacSHA256("\($0)\n\(expiresOn)", withUTF8Key: connectionParams.sharedAccessKey)?.addingPercentEncodingWithAzureAllowedCharacters() }
 
