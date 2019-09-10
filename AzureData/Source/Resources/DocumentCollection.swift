@@ -93,7 +93,7 @@ public struct DocumentCollection : CodableResource, SupportsPermissionToken {
             
             /// Gets or sets the collection of `Index` objects to be applied for this included path in
             /// the Azure Cosmos DB service.
-            public var indexes: [Index] = []
+            public var indexes: [Index]? = []
             
             
             /// Base class for `IndexingPolicy` `Indexes` in the Azure Cosmos DB service,
